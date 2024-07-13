@@ -14,9 +14,9 @@ import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms'
 import { Router } from '@angular/router';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
-
-// tslint:disable-next-line:no-duplicate-imports
 import {default as _rollupMoment} from 'moment';
+
+
 @Component({
   selector: 'app-redeem',
   standalone: true,
@@ -31,7 +31,7 @@ export class RedeemComponent {
   
     constructor(private fb: FormBuilder, private router: Router) {
       this.redeemform = this.fb.group({
-        billSerial: ['', [Validators.required, Validators.maxLength(2)]],
+        billserial: ['', [Validators.required, Validators.maxLength(2)]],
         billno: ['', [Validators.required, Validators.maxLength(5)]],
         name: ['', [Validators.required, Validators.maxLength(21)]],
         customerid: ['', [Validators.required, Validators.maxLength(8)]],
@@ -44,7 +44,7 @@ export class RedeemComponent {
         presentvalue: ['', [Validators.required, Validators.maxLength(8)]],
         roi: ['', [Validators.required, Validators.maxLength(3)]],
         date: ['', [Validators.required]],
-        AmountInWords: ['', [Validators.required]],
+        amountinwords: ['', [Validators.required]],
         redeemdate: ['', [Validators.required]],
         total: ['', [Validators.required]],
         intrest: ['', [Validators.required]],

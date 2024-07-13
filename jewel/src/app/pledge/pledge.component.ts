@@ -1,4 +1,4 @@
-import { Component , ElementRef, OnInit,Renderer2, ViewChild } from '@angular/core';
+import { Component , OnInit,Renderer2, ViewChild } from '@angular/core';
 import {ChangeDetectionStrategy} from '@angular/core';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatInputModule} from '@angular/material/input';
@@ -18,11 +18,7 @@ import {AsyncPipe} from '@angular/common';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {default as _rollupMoment} from 'moment';
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
-import { Bill } from './Bill';
-import { get } from 'http';
-import { BillDetail } from './BillDetails';
-import { Customer } from '../add-customer/Customer';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 
 export const MY_FORMATS = {
@@ -47,31 +43,29 @@ export const MY_FORMATS = {
 export class PledgeComponent implements OnInit {
 
     billform : FormGroup;
-    isBillSerialDisabled: boolean = false;
-    selectedCustomer: Customer | undefined;
-isSuccess: boolean = false;
-alertMessage: string = "";
-  
+    isBillSerialDisabled: boolean = true;
+    selectedCustomer: Data | undefined;
 
+  
+  
     constructor(private fb: FormBuilder, private router: Router,private http:HttpClient,private renderer: Renderer2) {
       this.billform = this.fb.group({
-        billSerial: [{disabled: false},[ Validators.maxLength(2)]],
-        billNo: ['', [ Validators.maxLength(5)]],
-        customerName: [''],
-        id: ['', [ Validators.maxLength(8)]],
-        Address: ['', []],
-        fullAddress: ['', []],
-        productTypeNo: ['', []],
+        billserial: [{disabled: true},[ Validators.maxLength(2)]],
+        billno: ['', [ Validators.maxLength(5)]],
+        name: [''],
+        customerid: ['', [ Validators.maxLength(8)]],
+        adrress: ['', []],
+        article: ['', []],
         amount: ['', [ Validators.maxLength(8)]],
-        grams: ['', [ Validators.maxLength(5)]],
-        productQuantity: ['', [ Validators.maxLength(3)]],
-        productDescription: ['' ],
-        presentValue: ['', [ Validators.maxLength(8)]],
-        rateOfInterest: ['', [ Validators.maxLength(3)]],
-        billDate: [new Date(), []],
-        AmountInWords: ['', [ ]],
+        weight: ['', [ Validators.maxLength(5)]],
+        quantity: ['', [ Validators.maxLength(3)]],
+        description: ['' ],
+        presentvalue: ['', [ Validators.maxLength(8)]],
+        roi: ['', [ Validators.maxLength(3)]],
+        date: [new Date(), []],
+        amountinwords: ['', [ ]],
         totalgive: [''],
-        interstpledge: [''],
+        intrestpledge: [''],
         phone:['']
         
       });
@@ -81,160 +75,71 @@ alertMessage: string = "";
     }
     transcript: string = '';
     myControl = new FormControl('');
-    options: Customer[]=[];
+    options: Data[]=[];
     filteredOptions: Observable<string[]>|undefined ;
     
     ngOnInit() {
-      this.billform.patchValue({billSerial:'B'})
-      
+      this.billform.patchValue({billserial:'B'})
       this.filteredOptions = this.myControl.valueChanges.pipe(
         startWith(""),
         map(value => this._filter(value || '')),
       );
-
-
       this.fetch();
-      this.billform.get('rateOfInterest')!.valueChanges.subscribe(() => this.calculateIntrestPledgeAndTotalGive());
+      this.billform.get('roi')!.valueChanges.subscribe(() => this.calculateIntrestPledgeAndTotalGive());
       this.billform.get('amount')!.valueChanges.subscribe(() => this.calculateIntrestPledgeAndTotalGive());
       this.billform.get('amount')!.valueChanges.subscribe(() => this.roiacess());
-      this.billform.get('productTypeNo')!.valueChanges.subscribe(() => this.roiacess());
+      this.billform.get('article')!.valueChanges.subscribe(() => this.roiacess());
       this.billform.get('amount')!.valueChanges.subscribe(() => this.presentvalue());
-      this.billform.get('grams')!.valueChanges.subscribe(() => this.presentvalue());
-      this.billform.get('presentValue')!.valueChanges.subscribe(() => this.presentvalue());
+      this.billform.get('weight')!.valueChanges.subscribe(() => this.presentvalue());
+      this.billform.get('article')!.valueChanges.subscribe(() => this.presentvalue());
 
-        }
+}
 
     private _filter(value: string): string[] {
       const filterValue = value.toLowerCase();
       // Filter options based on customerName and map to an array of strings
       return this.options.filter(option => option.customerName.toLowerCase().includes(filterValue))
-                          .map(filteredOption => filteredOption.customerName);
+                         .map(filteredOption => filteredOption.customerName);
     }
     
-
-    getBillDetails(){
-      const billDetail : BillDetail = {
-        productNo: (this.billform.get('productNo')?.value),
-        productDescription: (this.billform.get('productDescription')?.value) ,
-        productQuantity: (this.billform.get('productQuantity')?.value),
-      };
-      const billDetails:any[] = new Array;
-      billDetails.push(billDetail);    
-
-      return billDetails;
-    }
-
-    getCustomer(){
-      const customer : Customer = {
-        "id": parseInt(this.billform.get('id')?.value),
-        "area": "KELLAMBAKKAM",
-        "email": null,
-        "state": "TAMIL NADU",
-        "pincode": 603103,
-        "customerName": this.billform.get('customerName')?.value,
-        "street": "THAIYUR",
-        "district": "KANCHEEPURAM",
-        "country": "INDIA",
-        "relationShip": null,
-        "relationShipName": null,
-        "phone": null,
-        "mobileNo": null,
-        "address": null
-      }
-      return customer;
-    }
     onSubmit(form:any) {
       if (this.billform.valid) {
       console.log('Form submitted')
       console.log(this.billform.value);
-      const bill: Bill = {
-       // billSequence: parseInt(this.billform.get('billSequence')?.value),
-        amount: parseInt(this.billform.get('amount')?.value),
-        billSerial: String(this.billform.get('billSerial')?.value),
-        billDate: String(this.billform.get('billDate')?.value),
-        billNo: parseInt(this.billform.get('billNo')?.value),
-        careOf: this.billform.get('careOf')?.value != null?this.billform.get('careOf')?.value:null,
-        productTypeNo: parseInt(this.billform.get('productTypeNo')?.value),
-        amountInWords: String(this.billform.get('AmountInWords')?.value),
-        presentValue: parseInt(this.billform.get('presentValue')?.value),
-        grams: parseInt(this.billform.get('grams')?.value),
-        monthlyIncome: parseInt(this.billform.get('monthlyIncome')?.value),
-        redemptionDate: this.billform.get('redemptionDate')?.value != null?this.billform.get('redemptionDate')?.value:null,
-        redemptionInterest: parseInt(this.billform.get('redemptionInterest')?.value),
-        redemptionTotal: parseInt(this.billform.get('redemptionTotal')?.value),
-        redemptionStatus: this.billform.get('redemptionStatus')?.value != null?this.billform.get('redemptionStatus')?.value:null,
-        billRedemSerial: this.billform.get('billRedemSerial')?.value != null?this.billform.get('billRedemSerial')?.value:null,
-        billRedemNo: parseInt(this.billform.get('billRedemNo')?.value),
-        comments: this.billform.get('comments')?.value != null?this.billform.get('comments')?.value:null,
-        customer: this.getCustomer(),
-        rateOfInterest: 0,
-        billDetails: this.getBillDetails()
+
+      this.router.navigate(["/login"])
       }
-
-      const billDetails : BillDetail = {
-        productNo: parseInt(this.billform.get('productNo')?.value),
-        productDescription:this.billform.get('productDescription')?.value,
-        productQuantity: parseInt(this.billform.get('productQuantity')?.value),
-      }
-
-
-
-      this.saveCustomer(bill);
-      this.isSuccess = true;
-      //this.alertMessage = "Bill saved successfully!" 
-      //alert('Bill saved successfully!');
-      //this.router.navigate(["/login"])
-      }
+      
   }
     fetch() {
-      this.http.get<Customer[]>('http://localhost:8080/customers').subscribe(
+      this.http.get<Data[]>('http://localhost:8080/customers').subscribe(
         (resp) => {
-          // console.log(resp);
+          console.log(resp);
           this.options = resp.map(customer => ({
             ...customer,
             address: `${customer.street}, ${customer.district}, ${customer.country} - ${customer.pincode}`
           
           }));
-          console.log("options length"+this.options.length);
         },
         (error) => {
           console.error('Error fetching data:', error);
         }
       );
     }
-
-    saveCustomer(bill: Bill) { 
-      const body=JSON.stringify(bill);
-      const headers  = new HttpHeaders({ 'Content-Type': 'application/json'})
-  //     const headers= new HttpHeaders()
-  // .set('content-type', 'application/json')
-  // .set('Access-Control-Allow-Origin', '*');  
-
-      this.http.post('http://localhost:8080/bills',body, {headers}).subscribe(
-        (resp) => {
-          //console.log(resp);
-        },
-        (error) => {
-          console.error('Error fetching data:', error);
-        }
-      );
- }
   
-    displayFn(customer: Customer): string {
+    displayFn(customer: Data): string {
       return customer && customer.customerName ? customer.customerName : '';
     }   
     
   
     onCustomerSelected(customerName: string) {
-      console.log('called');
+      console.log('called')
       const selectedCustomer = this.options.find(option => option.customerName === customerName);
       if (selectedCustomer) {
-        console.log("selected");
-        const fullAddress1 = `${selectedCustomer.area}, ${selectedCustomer.street}, ${selectedCustomer.district}, ${selectedCustomer.country} - ${selectedCustomer.pincode}`;
-        console.log(fullAddress1)
-        this.billform.patchValue({ fullAddress: fullAddress1 });
-        this.billform.patchValue({customerName:selectedCustomer.customerName});
-        this.billform.patchValue({ id: selectedCustomer.id });
+        const address1 = `${selectedCustomer.street}, ${selectedCustomer.district}, ${selectedCustomer.country} - ${selectedCustomer.pincode}`;
+        this.billform.patchValue({ adrress: address1 });
+        console.log(address1)
+        this.billform.patchValue({ customerid: selectedCustomer.id });
         this.billform.patchValue({ phone: selectedCustomer.id });
       }
     }
@@ -243,12 +148,11 @@ alertMessage: string = "";
       const amount = inputElement.value;
   
       if (amount) {
-        console.log(amount)
         const amountValue = parseFloat(amount); // Convert input value to a number if needed
         const amountWords = this.convertAmountToWords(amountValue);
-        this.billform.patchValue({ AmountInWords: amountWords });
+        this.billform.patchValue({ amountinwords: amountWords });
       } else {
-        this.billform.patchValue({ AmountInWords: '' }); // Handle case when amount is empty or invalid
+        this.billform.patchValue({ amountinwords: '' }); // Handle case when amount is empty or invalid
       }
     }
   
@@ -320,19 +224,19 @@ alertMessage: string = "";
         const tot=wei*3000
         if (tot<=amo){
           const tot2=amo+200
-          this.billform.patchValue({presentValue:tot2})
+          this.billform.patchValue({presentvalue:tot2})
         }
         else if (tot>amo){
-          this.billform.patchValue({presentValue:tot})
+          this.billform.patchValue({presentvalue:tot})
         }
       else if(art=='Silver'){
         const tot=wei*35
         if (tot<=amo){
           const tot2=amo+100
-          this.billform.patchValue({presentValue:tot2})
+          this.billform.patchValue({presentvalue:tot2})
         }
         else if (tot>amo){
-          this.billform.patchValue({presentValue:tot})
+          this.billform.patchValue({presentvalue:tot})
         }
 
 
@@ -345,26 +249,26 @@ alertMessage: string = "";
     }
 
     roiacess(){
-      const art=this.billform.get('productTypeNo')!.value;
+      const art=this.billform.get('article')!.value;
       const amo=this.billform.get('amount')!.value;
 
-      if (art==='5'){
+      if (art==='Gold'){
         if(amo<10000){
-          this.billform.patchValue({rateOfInterest:36})
+          this.billform.patchValue({roi:36})
         }
         else if (amo>10000){
-          this.billform.patchValue({rateOfInterest:24})
+          this.billform.patchValue({roi:24})
         }
       }      
-      else if (art==='3'){
+      else if (art==='Silver'){
         this.billform.patchValue({
-          rateOfInterest:48
+          roi:48
         })
       }
 
     }
     calculateIntrestPledgeAndTotalGive() {
-      const roi = this.billform.get('rateOfInterest')!.value;
+      const roi = this.billform.get('roi')!.value;
       const amount = this.billform.get('amount')!.value;
   
       // Calculate intrestpledge (simple interest for demonstration purposes)
@@ -389,6 +293,20 @@ toggleBillSerialInput() {
  
   }    
   
+    interface Data {
+      id: any;
+      area: any;
+      email: any;
+      phone: any;
+      pincode: any;
+      customerName: any;
+      street: any;
+      district: any;
+      country: any;
+      relationShip: any;
+      relationShipName: any;
+      address?:any;
+    }
     interface Window {
   webkitSpeechRecognition: any;
 }
